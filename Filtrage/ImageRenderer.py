@@ -2,11 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
-
-
-def filtre_negatif(image):
-    """Inverse les couleurs d'une image."""
-    return 255 - image
+import Filtre as flt
 
 
 class ImageRenderer:
@@ -23,7 +19,9 @@ class ImageRenderer:
         self.cmap_color = "gray"
         self.filtres = {}
         self.filtres_actif = []
-        self.add_filter("negatif", filtre_negatif)
+        self.add_filter("negatif", flt.negatif)
+        self.add_filter("dilatation", flt.dilatation)
+        self.add_filter("erosion", flt.erosion)
 
     def add_filter(self, nom, fct):
         assert callable(fct), "ERREUR: La fonction du filtre doit être appellable"
@@ -201,8 +199,12 @@ class ImageRenderer:
 
 
 # J'ai mis ca pour tester quand on execute ce code en mode scrip et pas en mode module
+
+kernel = np.ones((3, 3), dtype=np.uint8)
+
 if __name__ == "__main__":
     imageRenderer = ImageRenderer()
     imageRenderer.load_images("Ressources")
+    imageRenderer.call_filter("dilatation", (kernel))
     imageRenderer.renderImages()
     print(imageRenderer)

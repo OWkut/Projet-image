@@ -1,0 +1,208 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+from PIL import Image
+
+
+def filtre_negatif(image):
+    """Inverse les couleurs d'une image."""
+    return 255 - image
+
+
+class ImageRenderer:
+    def __init__(self, images=None, hauteur=512, largeur=512):
+        """
+        Classe permettant le traitement d'image et l'application de filtre
+        @param images [np.array]: Liste d'image
+        @param hauteur [int]: hauteur des images
+        @param largeur [int]: largeur des images
+        """
+        self.largeur = largeur
+        self.hauteur = hauteur
+        self.images = images
+        self.cmap_color = "gray"
+        self.filtres = {}
+        self.filtres_actif = []
+        self.add_filter("negatif", filtre_negatif)
+
+    def add_filter(self, nom, fct):
+        assert callable(fct), "ERREUR: La fonction du filtre doit être appellable"
+        self.filtres[nom] = fct
+
+    def call_filter(self, nom, *args, **kwargs):
+        assert nom in self.filtres, f"ERREUR : Filtre '{nom_filtre}' non trouvé."
+
+        self.filtres_actif.append(nom)
+
+        if isinstance(self.images, list):
+            self.images = np.array(self.images)
+
+        self.images = np.array(
+            [self.filtres[nom](img, *args, **kwargs) for img in self.images]
+        )
+
+    def call_filters(self, filtres):
+        """
+        Applique plusieurs filtres en séquence sur les images
+
+        @param filtres [list] : Liste de tuples (nom_filtre, args, kwargs)
+        """
+
+        for nom, args, kwargs in filtres:
+            self.call_filter(nom, *args, **kwargs)
+
+    def generate_images(self, taille, mode="binaire"):
+        assert mode in ["binaire", "gris"], "ERREUR: Le mode renseigner est inconnu"
+
+        if mode == "binaire":
+            self.images = np.random.choice(
+                [0, 1], size=(taille, self.hauteur, self.largeur)
+            )
+        elif mode == "gris":
+            self.images = np.random.randint(
+                0, 256, size=(taille, self.hauteur, self.largeur), dtype=np.uint8
+            )
+
+    def load_images(self, path, formats=(".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
+        assert os.path.exists(path), f"ERREUR : Le dossier '{path}' n'existe pas."
+
+        images = []
+
+        for fichier in os.listdir(path):
+            if fichier.lower().endswith(formats):
+                image_path = os.path.join(path, fichier)
+                image = Image.open(image_path).convert("L")  # On met en gris
+                image = image.resize((self.largeur, self.hauteur))
+                image = np.array(image, dtype=np.uint8)
+
+                images.append(image)
+
+        assert len(images) > 0, f"ERREUR : Aucune image trouvée dans '{path}'."
+
+        self.images = np.array(images)
+
+    def afficherImage(self, image, axe, cmap, titre, vmin=0, vmax=1):
+        axe.imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
+        axe.set_title(titre)
+        axe.axis("off")
+
+    def renderImage(self, index):
+        assert (
+            self.images is not None and len(self.images) > 0
+        ), "ERREUR : La liste d'images est vide."
+
+        if isinstance(self.images, list):
+            self.images = np.array(self.images)  # Conversion list->np.array
+
+        assert (
+            self.images.ndim == 3
+        ), "ERREUR : La liste doit être de dimensions (nb_images, hauteur, largeur)."
+        assert isinstance(
+            self.images, np.ndarray
+        ), "ERREUR : La liste doit être de type np.array"
+        assert (
+            len(self.images) < index or index >= 0
+        ), "ERREUR: l'index est en dehors de la liste d'image"
+
+        vmin_value = 0
+        vmax_value = (
+            1 if self.images[index].max() == 1 else 255
+        )  # On adapte celon binaire/gris
+
+        plt.imshow(
+            self.images[index], cmap=self.cmap_color, vmin=vmin_value, vmax=vmax_value
+        )
+        plt.title("Image")
+        plt.axis("off")
+        plt.show()
+
+    def renderImages(self):
+        assert (
+            self.images is not None and len(self.images) > 0
+        ), "ERREUR : La liste d'images est vide."
+
+        if isinstance(self.images, list):
+            self.images = np.array(self.images)  # Conversion list->np.array
+
+        assert (
+            self.images.ndim == 3
+        ), "ERREUR : La liste doit être de dimensions (nb_images, hauteur, largeur)."
+        assert isinstance(
+            self.images, np.ndarray
+        ), "ERREUR : La liste doit être de type np.array"
+
+        taille = len(self.images)
+        nbcols = min(taille, 5)
+        nbrows = (taille + nbcols - 1) // nbcols
+
+        vmin_value = 0
+        vmax_value = (
+            1 if self.images.max() == 1 else 255
+        )  # On adapte celon binaire/gris
+
+        fig, axes = plt.subplots(nbrows, nbcols, figsize=(10, 6))
+
+        # Dans le cas ou on à qu'un image
+        if nbrows == 1:
+            axes = np.array(axes).reshape(1, -1)
+
+        for index, image in enumerate(self.images):
+            # Donne pour row le nombre de fois que l'on peu diviser et dans col le reste
+            row, col = divmod(index, nbcols)
+            self.afficherImage(
+                image,
+                axes[row, col],
+                self.cmap_color,
+                f"Image n°{index}",
+                vmin_value,
+                vmax_value,
+            )
+
+        plt.tight_layout()
+        plt.show()
+
+    def getImage(self):
+        return self.images
+
+    def setImages(self, images):
+        assert isinstance(
+            images, np.ndarray
+        ), "ERREUR: la liste d'image doit être du type np.array"
+
+        self.images = images
+
+    def getFiltres(self):
+        return self.filtres
+
+    def __str__(self) -> str:
+        nb_images = len(self.images)
+        nb_filtres = len(self.filtres)
+
+        filtres_str = (
+            "Aucun filtre ajouté" if nb_filtres == 0 else ", ".join(self.filtres.keys())
+        )
+
+        filtres_actif_str = (
+            "Aucun filtre appliqué"
+            if len(self.filtres_actif) == 0
+            else ", ".join(self.filtres_actif)
+        )
+
+        return (
+            "🖼️ ImageRenderer\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📏 => Taille des images : {self.largeur} x {self.hauteur} pixels\n"
+            f"📸 => Nombre d'images   : {nb_images}\n"
+            f"🎨 => Filtres disponibles : {nb_filtres} filtres\n"
+            f"🛠️ => Liste des filtres  : {filtres_str}\n"
+            f"🔥 => Filtre appliquer : {filtres_actif_str}\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+
+
+# J'ai mis ca pour tester quand on execute ce code en mode scrip et pas en mode module
+if __name__ == "__main__":
+    imageRenderer = ImageRenderer()
+    imageRenderer.load_images("Ressources")
+    imageRenderer.renderImages()
+    print(imageRenderer)

@@ -1,0 +1,16 @@
+# Organisation du dataset TACO vers YOLO
+#   TACO-YOLO/
+#   │── images/
+#   │   ├── train/  (images d'entraînement)
+#   │   ├── val/    (images de validation)
+#   │── labels/    (fichiers .txt des annotations)
+#   │   ├── train/  (annotations d'entrainement)
+#   │   ├── val/    (annotations de validation)
+#   │── dataset.yaml
+#
+
+train: TACO-YOLO/images/train
+val: TACO-YOLO/images/val
+
+nc: 20  # Nombre de classes dans TACO
+names: ['Plastic', 'Paper', 'Metal', 'Glass', 'Cardboard', 'Organic', ...]

@@ -19,7 +19,11 @@ class ImageRenderer:
         self.cmap_color = "gray"
         self.filtres = {}
         self.filtres_actif = []
+        # Ici j'ajoute les filtre
         self.add_filter("negatif", flt.negatif)
+        self.add_filter("sobel_vertical", flt.sobel_vertical)
+        self.add_filter("sobel_horizontal", flt.sobel_horizontal)
+        self.add_filter("sobel_magnitude", flt.sobel_magnitude)
         self.add_filter("dilatation", flt.dilatation)
         self.add_filter("erosion", flt.erosion)
 
@@ -62,6 +66,7 @@ class ImageRenderer:
             )
 
     def load_images(self, path, formats=(".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
+        path = os.path.join(os.path.dirname(__file__), path)
         assert os.path.exists(path), f"ERREUR : Le dossier '{path}' n'existe pas."
 
         images = []
@@ -205,6 +210,6 @@ kernel = np.ones((3, 3), dtype=np.uint8)
 if __name__ == "__main__":
     imageRenderer = ImageRenderer()
     imageRenderer.load_images("Ressources")
-    imageRenderer.call_filter("dilatation", (kernel))
-    imageRenderer.renderImages()
+    imageRenderer.call_filter("sobel_magnitude")
+    imageRenderer.renderImage(0)
     print(imageRenderer)

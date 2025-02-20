@@ -1,13 +1,17 @@
+import os
+# Désactiver les erreurs liées à Tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Désactive les logs d'information et d'avertissement de TensorFlow
+
 import tensorflow as tf
-from tensorflow.keras import layers
+from tensorflow.keras import layers # type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import time
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator # type: ignore
+from tqdm import tqdm  # Ajout pour la barre de progression
 
 # Chemin vers le dataset TACO
-dataset_path = "chemin/vers/taco_dataset"
+dataset_path = "data"
 
 # Utilisation de ImageDataGenerator pour charger et prétraiter les images
 datagen = ImageDataGenerator(rescale=1./255)
@@ -19,7 +23,7 @@ img_width = 64
 
 train_generator = datagen.flow_from_directory(
     dataset_path,
-    target_size=(img_height, img_width),
+    target_size=(img_height, img_width), # Redimensionnement à 64x64
     batch_size=batch_size,
     class_mode=None,
     color_mode='rgb'
@@ -47,6 +51,12 @@ def make_generator_model():
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
 
+    # Ajout d'une nouvelle couche pour agrandir à 64x64x3
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=(2, 2), padding='same', use_bias=False))
+    model.add(layers.BatchNormalization())
+    model.add(layers.LeakyReLU())
+
+    # Couche finale (sortie)
     model.add(layers.Conv2DTranspose(3, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
     
     return model
@@ -111,8 +121,18 @@ def train(dataset, epochs):
     for epoch in range(epochs):
         start = time.time()
 
-        for image_batch in dataset:
+        # Barre de progression pour l'époque
+        progress_bar = tqdm(dataset, desc=f"Epoch {epoch + 1}/{epochs}", unit="batch")
+
+        for image_batch in progress_bar:
             train_step(image_batch)
+
+        # Mise à jour de la barre de progression avec les pertes
+        progress_bar.set_postfix({
+            "Gen Loss": generator_loss(generator(tf.random.normal([batch_size, 100]), training=False)).numpy(),
+            "Disc Loss": discriminator_loss(discriminator(image_batch, training=False), 
+                                            discriminator(generator(tf.random.normal([batch_size, 100]), training=False))).numpy()
+        })
 
         # Afficher les images générées à la fin de chaque époque
         generate_and_save_images(generator, epoch + 1, tf.random.normal([16, 100]))

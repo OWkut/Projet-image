@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from tqdm import tqdm
 from PIL import Image
 import Filtre as flt
 
@@ -32,16 +33,24 @@ class ImageRenderer:
         self.filtres[nom] = fct
 
     def call_filter(self, nom, *args, **kwargs):
-        assert nom in self.filtres, f"ERREUR : Filtre '{nom_filtre}' non trouvé."
+        assert nom in self.filtres, f"ERREUR : Filtre '{nom}' non trouvé."
 
         self.filtres_actif.append(nom)
 
         if isinstance(self.images, list):
             self.images = np.array(self.images)
 
+        print(f"\n🛠️ Application du filtre '{nom}' sur {len(self.images)} images...\n")
+
+        # Barre de progression
         self.images = np.array(
-            [self.filtres[nom](img, *args, **kwargs) for img in self.images]
+            [
+                self.filtres[nom](img, *args, **kwargs)
+                for img in tqdm(self.images, desc=f"📸 Filtre '{nom}' en cours")
+            ]
         )
+
+        print(f"\n✅ Filtre '{nom}' appliqué avec succès !")
 
     def call_filters(self, filtres):
         """
@@ -70,19 +79,22 @@ class ImageRenderer:
         assert os.path.exists(path), f"ERREUR : Le dossier '{path}' n'existe pas."
 
         images = []
+        fichiers = [f for f in os.listdir(path) if f.lower().endswith(formats)]
 
-        for fichier in os.listdir(path):
-            if fichier.lower().endswith(formats):
-                image_path = os.path.join(path, fichier)
-                image = Image.open(image_path).convert("L")  # On met en gris
-                image = image.resize((self.largeur, self.hauteur))
-                image = np.array(image, dtype=np.uint8)
+        assert len(fichiers) > 0, f"ERREUR : Aucune image trouvée dans '{path}'."
 
-                images.append(image)
+        print(f"\n📂 Chargement de {len(fichiers)} images depuis '{path}'...\n")
 
-        assert len(images) > 0, f"ERREUR : Aucune image trouvée dans '{path}'."
+        for fichier in tqdm(fichiers, desc="🔄 Chargement des images"):
+            image_path = os.path.join(path, fichier)
+            image = Image.open(image_path).convert("L")  # Convertir en niveaux de gris
+            image = image.resize((self.largeur, self.hauteur))
+            image = np.array(image, dtype=np.uint8)
+            images.append(image)
 
         self.images = np.array(images)
+
+        print(f"\n✅ {len(self.images)} images chargées avec succès !")
 
     def afficherImage(self, image, axe, cmap, titre, vmin=0, vmax=1):
         axe.imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)

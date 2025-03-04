@@ -20,7 +20,9 @@ for image in coco_data["images"]:
             if annotation["image_id"] == id_img:
                 dest = os.path.join(str(annotation["category_id"]), f"{i}{ext}")
                 shutil.copy2(file_name, dest)
-
+                image["file_name"] = dest
         os.remove(file_name)
-    
     i += 1
+
+with open("annot.json", "w") as f:
+    json.dump(coco_data, f, indent=4)

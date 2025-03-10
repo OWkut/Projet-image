@@ -20,6 +20,7 @@ Crée un dossier labels/ contenant un .txt par image
 Convertit chaque annotation COCO en YOLO
 
 '''
+
 import json
 import os
 import glob
@@ -56,8 +57,9 @@ def get_image_structure(directory):
         print(f"⚠ Le dossier {directory} est introuvable.")
         return images
 
+    # Modification ici : Normaliser en minuscules lors de la récupération
     for img_path in glob.glob(f"{directory}/**/*.jpg", recursive=True):
-        img_name = os.path.basename(img_path)  # Nom du fichier
+        img_name = os.path.basename(img_path).lower()  # Convertir le nom du fichier en minuscules
         relative_folder = os.path.relpath(os.path.dirname(img_path), directory)  # Ex: "0", "1", etc.
         images[img_name] = relative_folder  # Associe "image.jpg" → "0"
     return images
@@ -79,7 +81,7 @@ for annotation in coco_data["annotations"]:
 # Traitement des images et conversion en format YOLO
 for image in coco_data["images"]:
     image_id = image["id"]
-    img_filename = image["file_name"].replace("\\", "/").split("/")[-1]  # Prend juste le nom du fichier
+    img_filename = image["file_name"].replace("\\", "/").split("/")[-1].lower()  # Convertir le nom du fichier en minuscules
     img_w, img_h = image["width"], image["height"]
 
     # Trouver dans quel dossier est l'image

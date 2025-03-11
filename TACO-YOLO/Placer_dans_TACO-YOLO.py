@@ -15,7 +15,7 @@ for folder in [IMG_TRAIN_DIR, IMG_VAL_DIR, IMG_TEST_DIR]:
     os.makedirs(folder, exist_ok=True)
 
 # Charger les annotations
-with open(os.path.join(DATASET_DIR, "annotations_final.json"), "r") as f:
+with open(os.path.join(DATASET_DIR, "annotations_augment.json"), "r") as f:
     annotations = json.load(f)
 
 # Liste des images

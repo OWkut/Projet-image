@@ -5,16 +5,22 @@ import matplotlib.pyplot as plt
 # ========================================================================== #
 #                       TRANSFORMATION MORPHOLOGIQUE                         #
 # ========================================================================== #
-def erosion(image, kernel):
+def erosion(image, kernel=None):
     """
     Applique l'érosion sur une image en niveaux de gris avec un élément structurant (kernel).
     """
+
+    if kernel is None:
+        kernel = np.ones((3, 3), dtype=np.uint8)
+
     assert len(kernel.shape) == 2, "ERREUR : Le Kernel doit être de dimension 2"
     assert len(image.shape) == 2, "ERREUR : L'image doit être de dimension 2"
     assert isinstance(image, np.ndarray), "ERREUR : L'image doit être un tableau numpy"
-    assert isinstance(
-        kernel, np.ndarray
-    ), "ERREUR : Le kernel doit être un tableau numpy"
+    assert isinstance(kernel, np.ndarray), (
+        "ERREUR : Le kernel doit être un tableau numpy"
+    )
+
+    image = seuillage(image)
 
     k_hauteur, k_largeur = kernel.shape
     i_hauteur, i_largeur = image.shape
@@ -35,16 +41,22 @@ def erosion(image, kernel):
     return image_eroder
 
 
-def dilatation(image, kernel):
+def dilatation(image, kernel=None):
     """
     Applique la dilatation sur une image en niveaux de gris avec un élément structurant (kernel).
     """
+
+    if kernel is None:
+        kernel = np.ones((3, 3), dtype=np.uint8)
+
     assert len(kernel.shape) == 2, "ERREUR : Le Kernel doit être de dimension 2"
     assert len(image.shape) == 2, "ERREUR : L'image doit être de dimension 2"
     assert isinstance(image, np.ndarray), "ERREUR : L'image doit être un tableau numpy"
-    assert isinstance(
-        kernel, np.ndarray
-    ), "ERREUR : Le kernel doit être un tableau numpy"
+    assert isinstance(kernel, np.ndarray), (
+        "ERREUR : Le kernel doit être un tableau numpy"
+    )
+
+    image = seuillage(image)
 
     k_hauteur, k_largeur = kernel.shape
     i_hauteur, i_largeur = image.shape
@@ -150,7 +162,7 @@ def laplacian(image):
     kernel = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
 
     height, width = image.shape
-    laplacian_img = np.np.zeros((height, width))
+    laplacian_img = np.zeros((height, width))
 
     for i in range(1, height - 1):
         for j in range(1, width - 1):
@@ -233,7 +245,6 @@ def negatif(image):
     return 255 - image
 
 
-# thresold ca veut dire seuil en anglais
-def thresold(image, seuil=128):
+def seuillage(image, seuil=128):
     """Convertit l'image en noire et blanc celon un seuil"""
     return np.where(image > seuil, 255, 0).astype(np.uint8)

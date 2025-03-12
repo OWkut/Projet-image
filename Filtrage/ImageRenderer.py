@@ -1,6 +1,32 @@
+# ============================================================
+# 🎨 IMAGE RENDERER - Traitement et Filtrage d'Images en Python
+# ============================================================
+# 📌 Description :
+# `ImageRenderer` est une classe Python permettant de :
+#   ✅ Charger des images depuis un dossier
+#   ✅ Générer des images aléatoires en niveaux de gris ou binaires
+#   ✅ Appliquer des **filtres morphologiques et transformations**
+#   ✅ Afficher une image unique ou une grille d'images
+#   ✅ Gérer une liste de filtres et leur application en séquence
+#
+# 🛠️ Fonctionnalités principales :
+#   - 💾 **Chargement** et conversion d'images (PNG, JPG, BMP, TIFF)
+#   - 🎨 **Filtres disponibles** :
+#       - `Négatif`, `Sobel`, `Prewitt`, `Laplacian`, `Flou`, `Affinage`, `Dilatation`, `Érosion`, `Seuillage`, etc.
+#   - 🔄 **Application de filtres en chaîne**
+#   - 📊 **Affichage d’images individuelles ou multiples**
+#   - 🛠️ **Ajout facile de nouveaux filtres**
+#
+
+# ============================================================
+# 🔥 Auteur : GOAREGUER Mael
+# 📂 Version : 1.0.3
+# ============================================================
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import cv2
 from tqdm import tqdm
 from PIL import Image
 import Filtre as flt
@@ -17,6 +43,7 @@ class ImageRenderer:
         self.largeur = largeur
         self.hauteur = hauteur
         self.images = images
+        self.image_names = {}
         self.cmap_color = "gray"
         self.filtres = {}
         self.filtres_actif = []
@@ -25,6 +52,15 @@ class ImageRenderer:
         self.add_filter("sobel_vertical", flt.sobel_vertical)
         self.add_filter("sobel_horizontal", flt.sobel_horizontal)
         self.add_filter("sobel_magnitude", flt.sobel_magnitude)
+        self.add_filter("prewitt_vertical", flt.prewitt_vertical)
+        self.add_filter("prewitt_horizontal", flt.prewitt_horizontal)
+        self.add_filter("prewitt_magnitude", flt.prewitt_maginitude)
+        self.add_filter("laplacian", flt.laplacian)
+        self.add_filter("gaussian_flou", flt.gaussian_flou)
+        self.add_filter("flou_moyen", flt.flou_moyen)
+        self.add_filter("affinage", flt.affinage)
+        self.add_filter("relief", flt.relief)
+        self.add_filter("seuillage", flt.seuillage)
         self.add_filter("dilatation", flt.dilatation)
         self.add_filter("erosion", flt.erosion)
 
@@ -91,6 +127,7 @@ class ImageRenderer:
             image = image.resize((self.largeur, self.hauteur))
             image = np.array(image, dtype=np.uint8)
             images.append(image)
+            self.image_names[len(images) - 1] = fichier
 
         self.images = np.array(images)
 
@@ -188,6 +225,29 @@ class ImageRenderer:
 
     def getFiltres(self):
         return self.filtres
+
+    def normalize_contrast(self):
+        """
+        Améliore le contraste des images en normalisant les valeurs de pixels (Min-Max).
+        """
+        assert (
+            self.images is not None and len(self.images) > 0
+        ), "ERREUR : Aucune image à traiter."
+
+        if isinstance(self.images, list):
+            self.images = np.array(self.images)
+
+        assert (
+            self.images.ndim == 3
+        ), "ERREUR : Les images doivent être de dimensions (nb_images, hauteur, largeur)."
+
+        self.images = np.array(
+            [
+                cv2.normalize(img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                for img in tqdm(self.images, desc="⚡ Normalisation en cours")
+            ],
+            dtype=np.uint8,
+        )
 
     def __str__(self) -> str:
         nb_images = len(self.images)
